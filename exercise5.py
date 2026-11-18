@@ -1,3 +1,6 @@
+def AlphaPos(letter):
+    return ord(letter.lower())-ord("a")
+
 class VigenereCipher:
     """
        VigenereCipher class (TO BE COMPLETED).
@@ -34,8 +37,14 @@ class VigenereCipher:
         str
             The shifted letter.
         """
-        shifted_letter = ''
-        return shifted_letter
+        lowercase=letter==letter.lower()
+        aPos=ord("a")
+
+        asciiCode=ord(letter.lower())
+        alphaPos=asciiCode-aPos
+        newPos=(alphaPos+(shift if forward else -shift))%26
+        shifted_letter = chr(newPos+aPos)
+        return shifted_letter if lowercase else shifted_letter.upper()
 
     def __generate_shift_list(self, plaintext_length: int):
         """
@@ -58,7 +67,13 @@ class VigenereCipher:
         list
             A list of shifts (integers).
         """
-        shift_list = []
+        #not that the actual Vigenère cipher uses one-indexed alphabetic positions so it should really be AlphaPos(c)+1
+        #but the task specification explicitly mentioned A->0 and Z->25 so I've left it as AlphaPos(c)
+        repeatsInitial=plaintext_length//len(self.keyword)
+        extraChars=plaintext_length%len(self.keyword)
+        shift_list = [AlphaPos(c) for c in self.keyword*repeatsInitial]
+        for c in self.keyword[:extraChars]:
+            shift_list.append(AlphaPos(c))
         return shift_list
 
     def encrypt(self, plaintext: str):
@@ -82,7 +97,14 @@ class VigenereCipher:
         str
             The ciphertext string.
         """
-        ciphertext = ''
+        plaintext=plaintext.upper()
+        plaintextNoReplace=plaintext
+        for c in plaintextNoReplace:
+            if c in plaintext and (ord(c)>ord("Z") or ord(c)<ord("A")):
+                plaintext=plaintext.replace(c,"")
+        #print(f"encrpting, modified plaintext: {plaintext}")
+        shift_list=self.__generate_shift_list(len(plaintext))
+        ciphertext = "".join([self.__shift_letter(plaintext[i],shift_list[i],True) for i in range(len(plaintext))])
         return ciphertext
 
     def decrypt(self, ciphertext: str):
@@ -109,7 +131,13 @@ class VigenereCipher:
         str
             The plaintext string.
         """
-        plaintext = ''
+        ciphertext=ciphertext.upper()
+        ciphertextNoReplace=ciphertext
+        for c in ciphertextNoReplace:
+            if c in ciphertext and (ord(c)>ord("Z") or ord(c)<ord("A")):
+                ciphertext=ciphertext.replace(c,"")
+        shift_list=self.__generate_shift_list(len(ciphertext))
+        plaintext = "".join([self.__shift_letter(ciphertext[i],shift_list[i],False) for i in range(len(ciphertext))])
         return plaintext
 
 
@@ -117,7 +145,11 @@ def main():
     vig_cipher = VigenereCipher('smarties')
     ciphertext = vig_cipher.encrypt("The quick brown fox jumps over the lazy dog")
     plaintext = vig_cipher.decrypt(ciphertext)
+    #print(plaintext)
+    #print(AlphaPos("a"))
+    #print(vig_cipher.__shift_letter("T",AlphaPos("s"),true))
     assert plaintext == 'THEQUICKBROWNFOXJUMPSOVERTHELAZYDOG'
+
 
 
 if __name__ == "__main__":
